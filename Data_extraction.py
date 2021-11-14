@@ -228,7 +228,7 @@ def _get_clip_seq(df, subject_list, args):
     X = pad_sequence(X, batch_first=True, padding_value=0)
     y = pad_sequence(y, batch_first=True, padding_value=-100)
             
-    return X.to(args.device), X_len.to(args.device), y.to(args.device)
+    return X, X_len, y
 
 def Get_Data(args):
     '''
