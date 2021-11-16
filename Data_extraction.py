@@ -282,4 +282,4 @@ def Get_Data(args):
         test_list, args)
     X_train = shuffle_ts(X_train, train_len)
 
-    return X_train, train_len, y_train, X_test, test_len, y_test
+    return X_train, train_len, y_train, X_test, test_len, y_test, train_list, test_list, clip_time
