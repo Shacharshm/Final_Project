@@ -226,7 +226,8 @@ def _get_clip_seq(df, subject_list, args):
 
     # pad sequences
     X = pad_sequence(X, batch_first=True, padding_value=0)
-    y = pad_sequence(y, batch_first=True, padding_value=-100)
+    #y = pad_sequence(y, batch_first=True, padding_value=-100)
+    y = pad_sequence(y, batch_first=True, padding_value=0)
             
     return X, X_len, y
 
@@ -282,4 +283,4 @@ def Get_Data(args):
         test_list, args)
     X_train = shuffle_ts(X_train, train_len)
 
-    return X_train, train_len, y_train, X_test, test_len, y_test, train_list, test_list, clip_time
+    return tf.convert_to_tensor(X_train), tf.convert_to_tensor(train_len), tf.convert_to_tensor(y_train), tf.convert_to_tensor(X_test), tf.convert_to_tensor(test_len), tf.convert_to_tensor(y_test), train_list, test_list, clip_time, param_grid
