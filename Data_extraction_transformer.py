@@ -21,14 +21,13 @@ except:
     pass
 
 K_SEED = 330
-K_RUNS = 3
 
 def _info(s):
     print('---')
     print(s)
     print('---')
 
-def _get_clip_labels():
+def _get_clip_labels(args):
     '''
     assign all clips within runs a label
     use 0 for testretest
@@ -37,7 +36,7 @@ def _get_clip_labels():
     timing_file = pd.read_csv('data/videoclip_tr_lookup.csv')
 
     clips = []
-    for run in range(K_RUNS):
+    for run in range(args.K_RUNS):
         run_name = 'MOVIE%d' %(run+1) #MOVIEx_7T_yz
         timing_df = timing_file[timing_file['run'].str.contains(run_name)]  
         timing_df = timing_df.reset_index(drop=True)
@@ -136,12 +135,12 @@ def _clip_class_df(args):
     '''
     main
     '''
-    clip_y = _get_clip_labels()
+    clip_y = _get_clip_labels(args)
     
     table = []
-    for run in range(K_RUNS):
+    for run in range(args.K_RUNS):
         
-        print('loading run %d/%d' %(run+1, K_RUNS))
+        print('loading run %d/%d' %(run+1, args.K_RUNS))
         run_name = 'MOVIE%d' %(run+1) #MOVIEx_7T_yz
 
         # timing file for run
@@ -200,8 +199,8 @@ def _get_clip_seq(df, subject_list, args):
                 label_seqs = df[(df['Subject']==subject) & 
                     (df['y'] == 0)]['y'].values
 
-                k_time = int(seqs.shape[0]/K_RUNS)
-                for i_run in range(K_RUNS):
+                k_time = int(seqs.shape[0]/args.K_RUNS)
+                for i_run in range(args.K_RUNS):
                     seq = seqs[i_run*k_time:(i_run+1)*k_time, :]
                     label_seq = label_seqs[i_run*k_time:(i_run+1)*k_time]
                     if args.zscore:
@@ -226,8 +225,9 @@ def _get_clip_seq(df, subject_list, args):
 
     # pad sequences
     X = pad_sequence(X, batch_first=True, padding_value=0)
-    #y = pad_sequence(y, batch_first=True, padding_value=-100)
-    y = pad_sequence(y, batch_first=True, padding_value=0)
+    y = pad_sequence(y, batch_first=True, padding_value=15)
+    #X = pad_sequence(X, batch_first=True, padding_value=-100)
+    #y = pad_sequence(y, batch_first=True, padding_value=0)
             
     return X, X_len, y
 
@@ -240,16 +240,7 @@ def Get_Data(args):
     test_len: type: EagerTensor shape: [number of examples]
     y_test: type: EagerTensor shape: [number of exmples, time]
     '''
-    
-    _info(args.roi_name)
-    # Get all combinations of the parameter grid
-    param_grid = {'k_hidden':args.k_hidden,'k_layers':args.k_layers}
-    param_grid = [comb for comb in ParameterGrid(param_grid)]
 
-    print(len(param_grid))
-    print(len(args.k_layers))
-
-    _info('Number of hyperparameter combinations: '+str(len(param_grid)))
     _info(args.roi_name)
 
     start = time.clock()
@@ -259,7 +250,8 @@ def Get_Data(args):
     # get X-y from df
     subject_list = df['Subject'].unique()
     train_list = subject_list[:args.train_size]
-    test_list = subject_list[args.train_size:]
+    val_list = subject_list[args.train_size:args.train_size+38]
+    test_list = subject_list[args.train_size+38:]
 
     print('number of subjects = %d' %(len(subject_list)))
     features = [ii for ii in df.columns if 'feat' in ii]
@@ -279,8 +271,10 @@ def Get_Data(args):
     # get train, test sequences
     X_train, train_len, y_train = _get_clip_seq(df, 
         train_list, args)
+    X_val, val_len, y_val = _get_clip_seq(df, 
+        val_list, args)
     X_test, test_len, y_test = _get_clip_seq(df, 
         test_list, args)
     X_train = shuffle_ts(X_train, train_len)
 
-    return tf.convert_to_tensor(X_train), tf.convert_to_tensor(train_len), tf.convert_to_tensor(y_train), tf.convert_to_tensor(X_test), tf.convert_to_tensor(test_len), tf.convert_to_tensor(y_test), train_list, test_list, clip_time, param_grid
+    return tf.convert_to_tensor(X_train), tf.convert_to_tensor(train_len), tf.convert_to_tensor(y_train), tf.convert_to_tensor(X_val), tf.convert_to_tensor(val_len), tf.convert_to_tensor(y_val), tf.convert_to_tensor(X_test), tf.convert_to_tensor(test_len), tf.convert_to_tensor(y_test), train_list, test_list, clip_time
